@@ -1,0 +1,50 @@
+#include <Include.h>
+
+void ISR();
+
+bool isAlarmSet = false;
+
+void setup() {
+  Serial.begin(9600);
+  setup_ds3231();
+  clear_alarms();
+  pinMode(EXT_INT, INPUT_PULLUP);
+  isAlarmSet = set_alarm(now() + TimeSpan(10), DS3231_A1_Second);
+  LowPower.attachInterruptWakeup(EXT_INT, ISR, FALLING);
+  
+}
+
+void loop() {
+  delay(5000);
+  char date[10] = "hh:mm:ss";
+  now().toString(date);
+  Serial.println(date);
+  if(isAlarmSet){
+    isAlarmSet = set_alarm(now() + TimeSpan(10), DS3231_A1_Second);
+  }
+  DateTime alarm1 = getAlarm1();
+  Ds3231Alarm1Mode alarm1mode = getAlarm1Mode();
+  char alarm1Date[12] = "DD hh:mm:ss";
+  alarm1.toString(alarm1Date);
+  Serial.print(" [Alarm1: ");
+  Serial.print(alarm1Date);
+  Serial.print(", Mode: ");
+  switch (alarm1mode) {
+    case DS3231_A1_PerSecond: Serial.print("PerSecond"); break;
+    case DS3231_A1_Second: Serial.print("Second"); break;
+    case DS3231_A1_Minute: Serial.print("Minute"); break;
+    case DS3231_A1_Hour: Serial.print("Hour"); break;
+    case DS3231_A1_Date: Serial.print("Date"); break;
+    case DS3231_A1_Day: Serial.print("Day"); break;
+  }
+  Serial.println("]");
+  LowPower.sleep();
+}
+
+void ISR() {
+  Serial.println("I AM AWAKE!");
+  clearAlarm(ALARM_1);
+  isAlarmSet = false;
+}
+
+
